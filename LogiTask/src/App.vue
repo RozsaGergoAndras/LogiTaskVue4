@@ -5,33 +5,51 @@
       <div class="container-fluid">
         <a class="navbar-brand" href="#">LogiTask</a>
         <div class="d-flex align-items-center">
-          <!-- Felhasználó üdvözlése, csak bejelentkezett állapotban -->
+          <!-- Felhasználó üdvözlése -->
           <span v-if="isLoggedIn" class="navbar-text me-3">
             <strong>Szia, {{ userName }}</strong>
           </span>
-          <!-- Visszaszámláló megjelenítése, ha be van jelentkezve -->
+          <!-- Visszaszámláló -->
           <span v-if="isLoggedIn" class="navbar-text me-3">
             <strong>Szünet idő:</strong> {{ timeLeft }} perc
           </span>
-          <!-- Manager gomb: csak akkor jelenik meg, ha be van jelentkezve és role manager vagy 2 -->
+          <!-- Előző munkák: csak worker (role=1) -->
           <button
-            v-if="isLoggedIn && (role === 'manager' || role === '2' || role === 2)"
+            v-if="isLoggedIn && (role === '1' || role === 1)"
+            type="button"
+            class="btn btn-secondary me-2"
+            @click="currentView = 'previousWorks'"
+          >
+            Előző munkák
+          </button>
+          <!-- Manager felület: csak manager (role=2) -->
+          <button
+            v-if="isLoggedIn && (role === '2' || role === 'manager')"
             type="button"
             class="btn btn-warning me-2"
-            @click="showAdminPanel"
+            @click="currentView = 'adminPanel'"
           >
             Manager
           </button>
-          <!-- Statisztika gomb: csak manager role esetén -->
+          <!-- Assigned: csak manager -->
           <button
-            v-if="isLoggedIn && (role === 'manager' || role === '2' || role === 2)"
+            v-if="isLoggedIn && (role === '2' || role === 'manager')"
+            type="button"
+            class="btn btn-secondary me-2"
+            @click="currentView = 'assignedWorks'"
+          >
+            Assigned
+          </button>
+          <!-- Statisztika: csak manager -->
+          <button
+            v-if="isLoggedIn && (role === '2' || role === 'manager')"
             type="button"
             class="btn btn-info me-2"
-            @click="showStatsPanel"
+            @click="currentView = 'stats'"
           >
             Statisztika
           </button>
-          <!-- Logout gomb -->
+          <!-- Logout -->
           <button
             v-if="isLoggedIn"
             type="button"
@@ -46,7 +64,6 @@
 
     <!-- Fő tartalom -->
     <div class="container my-5">
-      <!-- Login nézet -->
       <Login
         v-if="currentView === 'login'"
         :logoutMessage="logoutMessage"
@@ -54,14 +71,12 @@
         @clear-logout-message="clearLogoutMessage"
       />
 
-      <!-- TaskInfo nézet -->
       <TaskInfo
         v-else-if="currentView === 'taskInfo'"
         :token="token"
         @navigate="handleNavigate"
       />
 
-      <!-- CurrentTask nézet -->
       <CurrentTask
         v-else-if="currentView === 'currentTask'"
         :token="token"
@@ -69,41 +84,44 @@
         @navigateToEndTask="handleNavigateToEndTask"
       />
 
-      <!-- EndTask nézet -->
       <EndTask
         v-else-if="currentView === 'endTask'"
         :timeTaken="timeTaken"
         @backToTaskInfo="handleBackToTaskInfo"
       />
 
-      <!-- AdminPanel nézet -->
       <AdminPanel
         v-else-if="currentView === 'adminPanel'"
         :token="token"
         @backToTaskInfo="handleBackToTaskInfo"
       />
 
-      <!-- Stats (Statisztika) nézet -->
+      <ListAssignedWorks
+        v-else-if="currentView === 'assignedWorks'"
+        :token="token"
+      />
+
+      <ListPreviousWorks
+        v-else-if="currentView === 'previousWorks'"
+        :token="token"
+      />
+
       <Stats
         v-else-if="currentView === 'stats'"
         :token="token"
         @backToTaskInfo="handleBackToTaskInfo"
       />
 
-      <!-- Kijelentkezés esetén megjelenő progress bar -->
+      <!-- Logout progress -->
       <div v-if="loggingOut" class="text-center">
         <p>{{ logoutMessage }}</p>
         <div class="progress mt-3">
-          <div
-            class="progress-bar progress-bar-striped progress-bar-animated"
-            role="progressbar"
-            style="width: 100%"
-          ></div>
+          <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
         </div>
       </div>
     </div>
 
-    <!-- Bootstrappal stílusos modal a szünet figyelmeztetésére -->
+    <!-- Szünet modal -->
     <div v-if="showBreakModal" class="modal fade show" style="display: block;" tabindex="-1">
       <div class="modal-dialog">
         <div class="modal-content">
@@ -112,12 +130,10 @@
             <button type="button" class="btn-close" @click="closeBreakModal"></button>
           </div>
           <div class="modal-body">
-            <p>A bejelentkezés óra lejárt. Kérjük, tarts egy rövid szünetet!</p>
+            <p>A szünetidő lejárt. Kérjük, tarts egy rövid szünetet!</p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-primary" @click="closeBreakModal">
-              OK, folytatom
-            </button>
+            <button type="button" class="btn btn-primary" @click="closeBreakModal">OK</button>
           </div>
         </div>
       </div>
@@ -132,6 +148,8 @@ import TaskInfo from "./components/TaskInfo.vue";
 import CurrentTask from "./components/CurrentTask.vue";
 import EndTask from "./components/EndTask.vue";
 import AdminPanel from "./components/AdminPanel.vue";
+import ListAssignedWorks from "./components/ListAssignedWorks.vue";
+import ListPreviousWorks from "./components/ListPreviousWorks.vue";
 import Stats from "./components/Stats.vue";
 
 export default {
@@ -142,19 +160,20 @@ export default {
     CurrentTask,
     EndTask,
     AdminPanel,
+    ListAssignedWorks,
+    ListPreviousWorks,
     Stats
   },
   data() {
     return {
       token: "",
       role: "",
-      userName: "", // Új property a felhasználó nevének tárolására
+      userName: "",
       logoutMessage: "",
       loggingOut: false,
-      currentView: "login", // "login" | "taskInfo" | "currentTask" | "endTask" | "adminPanel" | "stats"
+      currentView: "login",
       currentTaskId: null,
       timeTaken: 0,
-      // Timer: 60 perc visszaszámláló (egység: perc)
       timeLeft: 60,
       timer: null,
       showBreakModal: false
@@ -173,19 +192,18 @@ export default {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${this.token}`
+            Authorization: `Bearer ${this.token}`
           }
         });
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || "Hiba történt a felhasználó adatainak lekérésekor!");
+          throw new Error(data.error || "Hiba a felhasználó adatainak lekérésekor");
         }
         const data = await response.json();
-        // Role és név beállítása
         this.role = data.role.toString();
-        this.userName = data.name; // A backend neve mezője
+        this.userName = data.name;
       } catch (error) {
-        console.error("Error fetching user role:", error);
+        console.error(error);
         this.role = "";
       }
       this.currentView = "taskInfo";
@@ -204,16 +222,16 @@ export default {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${this.token}`
+            Authorization: `Bearer ${this.token}`
           }
         });
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || "Kijelentkezés sikertelen!");
+          throw new Error(data.error || "Kijelentkezés sikertelen");
         }
-        message = "Sikeres kijelentkezés! Átirányítás folyamatban...";
-      } catch (error) {
-        message = "Kijelentkezés sikertelen: " + error.message;
+        message = "Sikeres kijelentkezés!";
+      } catch (e) {
+        message = "Kijelentkezés sikertelen: " + e.message;
       }
       this.logoutMessage = message;
       clearInterval(this.timer);
@@ -222,43 +240,27 @@ export default {
         this.role = "";
         this.userName = "";
         this.currentView = "login";
-        localStorage.removeItem("token");
         this.loggingOut = false;
       }, 1000);
     },
     handleNavigate(taskId) {
-      console.log("App.vue: Received navigate event with taskId:", taskId);
       this.currentTaskId = taskId;
       this.currentView = "currentTask";
     },
     handleNavigateToEndTask({ taskId, timeTaken }) {
-      console.log("App.vue: Received navigateToEndTask event with taskId:", taskId, "timeTaken:", timeTaken);
       this.currentTaskId = taskId;
       this.timeTaken = timeTaken;
       this.currentView = "endTask";
     },
     handleBackToTaskInfo() {
-      console.log("App.vue: Received backToTaskInfo event");
       this.currentView = "taskInfo";
     },
-    showAdminPanel() {
-      this.currentView = "adminPanel";
-    },
-    showStatsPanel() {
-      this.currentView = "stats";
-    },
-    // Timer kezelése: 60 perc visszaszámlálás, 1 percenként csökken
     startTimer() {
       clearInterval(this.timer);
-      this.timeLeft = 60; // 60 perc
+      this.timeLeft = 60;
       this.timer = setInterval(() => {
-        if (this.timeLeft > 0) {
-          this.timeLeft--;
-        } else {
-          clearInterval(this.timer);
-          this.showBreakModal = true;
-        }
-      }, 60000); // 60 000 ms = 1 perc
+        if (this.timeLeft > 0) this.timeLeft--; else { clearInterval(this.timer); this.showBreakModal = true; }
+      }, 60000);
     },
     closeBreakModal() {
       this.showBreakModal = false;
