@@ -1,68 +1,96 @@
 <template>
   <div>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="#">LogiTask</a>
-        <div class="d-flex align-items-center">
-          <!-- Felhasználó üdvözlése -->
-          <span v-if="isLoggedIn" class="navbar-text me-3">
-            <strong>Szia, {{ userName }}</strong>
-          </span>
-          <!-- Visszaszámláló -->
-          <span v-if="isLoggedIn" class="navbar-text me-3">
-            <strong>Szünet idő:</strong> {{ timeLeft }} perc
-          </span>
-          <!-- Előző munkák: csak worker (role=1) -->
-          <button
-            v-if="isLoggedIn && (role === '1' || role === 1)"
-            type="button"
-            class="btn btn-secondary me-2"
-            @click="currentView = 'previousWorks'"
-          >
-            Előző munkák
-          </button>
-          <!-- Manager felület: csak manager (role=2) -->
-          <button
-            v-if="isLoggedIn && (role === '2' || role === 'manager')"
-            type="button"
-            class="btn btn-warning me-2"
-            @click="currentView = 'adminPanel'"
-          >
-            Manager
-          </button>
-          <!-- Assigned: csak manager -->
-          <button
-            v-if="isLoggedIn && (role === '2' || role === 'manager')"
-            type="button"
-            class="btn btn-secondary me-2"
-            @click="currentView = 'assignedWorks'"
-          >
-            Assigned
-          </button>
-          <!-- Statisztika: csak manager -->
-          <button
-            v-if="isLoggedIn && (role === '2' || role === 'manager')"
-            type="button"
-            class="btn btn-info me-2"
-            @click="currentView = 'stats'"
-          >
-            Statisztika
-          </button>
-          <!-- Logout -->
-          <button
-            v-if="isLoggedIn"
-            type="button"
-            class="btn btn-danger"
-            @click="logout"
-          >
-            Logout
-          </button>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3 shadow">
+      <div class="container">
+        <!-- Brand with logo -->
+        <a class="navbar-brand" href="#">
+          <img src="/logo.png" alt="LogiTask"style="height: 65px;" />
+        </a>
+
+        <!-- Mobile toggler -->
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#mainNavbar"
+          aria-controls="mainNavbar"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Links -->
+        <div class="collapse navbar-collapse" id="mainNavbar">
+          <!-- Centered buttons -->
+          <ul class="navbar-nav mx-auto d-flex gap-4">
+            <!-- Manager -->
+            <li
+              class="nav-item"
+              v-if="isLoggedIn && (role === '2' || role === 2 || role === 'manager')"
+            >
+              <button
+                class="btn btn-outline-light"
+                @click.prevent="currentView = 'adminPanel'"
+              >
+                Manager
+              </button>
+            </li>
+            <!-- Kiosztott feladatok -->
+            <li
+              class="nav-item"
+              v-if="isLoggedIn && (role === '2' || role === 2 || role === 'manager')"
+            >
+              <button
+                class="btn btn-outline-light"
+                @click.prevent="currentView = 'assignedWorks'"
+              >
+                Kiosztott feladatok
+              </button>
+            </li>
+            <!-- Statisztika -->
+            <li
+              class="nav-item"
+              v-if="isLoggedIn && (role === '2' || role === 2 || role === 'manager')"
+            >
+              <button
+                class="btn btn-outline-light"
+                @click.prevent="currentView = 'stats'"
+              >
+                Statisztika
+              </button>
+            </li>
+            <!-- Előző munkák -->
+            <li
+              class="nav-item"
+              v-if="isLoggedIn && (role === '1' || role === 1)"
+            >
+              <button
+                class="btn btn-outline-light"
+                @click.prevent="currentView = 'previousWorks'"
+              >
+                Előző munkák
+              </button>
+            </li>
+          </ul>
+          <!-- Logout button aligned right -->
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <button
+                v-if="isLoggedIn"
+                class="btn btn-danger fw-bold"
+                @click="logout"
+              >
+                Kijelentkezés
+              </button>
+            </li>
+          </ul>
         </div>
       </div>
     </nav>
 
-    <!-- Fő tartalom -->
+    <!-- Main content -->
     <div class="container my-5">
       <Login
         v-if="currentView === 'login'"
@@ -112,17 +140,25 @@
         @backToTaskInfo="handleBackToTaskInfo"
       />
 
-      <!-- Logout progress -->
-      <div v-if="loggingOut" class="text-center">
+      <div v-if="loggingOut" class="text-center mt-4">
         <p>{{ logoutMessage }}</p>
-        <div class="progress mt-3">
-          <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+        <div class="progress mt-2">
+          <div
+            class="progress-bar progress-bar-striped progress-bar-animated"
+            role="progressbar"
+            style="width: 100%;"
+          ></div>
         </div>
       </div>
     </div>
 
-    <!-- Szünet modal -->
-    <div v-if="showBreakModal" class="modal fade show" style="display: block;" tabindex="-1">
+    <!-- Break modal -->
+    <div
+      v-if="showBreakModal"
+      class="modal fade show"
+      style="display: block;"
+      tabindex="-1"
+    >
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -133,7 +169,13 @@
             <p>A szünetidő lejárt. Kérjük, tarts egy rövid szünetet!</p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-primary" @click="closeBreakModal">OK</button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="closeBreakModal"
+            >
+              OK
+            </button>
           </div>
         </div>
       </div>
@@ -206,7 +248,10 @@ export default {
         console.error(error);
         this.role = "";
       }
-      this.currentView = "taskInfo";
+      this.currentView =
+        (this.role === "2" || this.role === "manager")
+          ? "adminPanel"
+          : "taskInfo";
       this.logoutMessage = "";
       this.startTimer();
     },
@@ -259,7 +304,12 @@ export default {
       clearInterval(this.timer);
       this.timeLeft = 60;
       this.timer = setInterval(() => {
-        if (this.timeLeft > 0) this.timeLeft--; else { clearInterval(this.timer); this.showBreakModal = true; }
+        if (this.timeLeft > 0) {
+          this.timeLeft--;
+        } else {
+          clearInterval(this.timer);
+          this.showBreakModal = true;
+        }
       }, 60000);
     },
     closeBreakModal() {
@@ -274,8 +324,22 @@ export default {
 </script>
 
 <style scoped>
-.navbar-text {
-  font-size: 1.2rem;
-  color: #fff;
+/* Increase navbar height */
+.navbar {
+  min-height: 70px;
+}
+/* Make buttons larger */
+.btn {
+  font-size: 1.1rem;
+  padding: 0.5rem 1.5rem;
+}
+/* Outline-light buttons on dark background */
+.btn-outline-light {
+  border-width: 2px;
+}
+/* Dark navbar text color */
+.navbar-dark .navbar-brand img {
+  display: inline-block;
+  vertical-align: middle;
 }
 </style>
