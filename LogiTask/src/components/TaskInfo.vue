@@ -1,25 +1,31 @@
 <template>
-  <div class="card">
-    <div class="card-header">
-      Aktív Task - <small>TaskInfo Component</small>
+  <div class="card shadow-sm mt-4">
+    <!-- Card header -->
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0">Aktív Task</h5>
     </div>
+
+    <!-- Card body -->
     <div class="card-body">
-      <!-- Betöltési állapot -->
-      <div v-if="isLoading" class="text-center">
+      <!-- Betöltés -->
+      <div v-if="isLoading" class="text-center my-5">
         <div class="spinner-border" role="status">
           <span class="visually-hidden">Betöltés...</span>
         </div>
-        <p>Betöltés...</p>
+        <p class="mt-2">Betöltés...</p>
       </div>
-      <!-- Hibaüzenet -->
+
+      <!-- Hiba -->
       <div v-else-if="errorMessage" class="alert alert-danger">
         {{ errorMessage }}
       </div>
-      <!-- Ha a task adatai betöltődtek -->
+
+      <!-- Task részletek -->
       <div v-else-if="task">
-        <h5 class="card-title">Task #{{ task.id }}</h5>
-        <p class="card-text"><strong>Leírás:</strong> {{ task.description }}</p>
-        <ul class="list-group list-group-flush">
+        <!-- Leírás kiemelten -->
+        <p class="task-description mb-4">{{ task.description }}</p>
+
+        <ul class="list-group list-group-flush mb-4">
           <li class="list-group-item">
             <strong>Létrehozva:</strong> {{ formatDate(task.created_at) }}
           </li>
@@ -27,29 +33,43 @@
             <strong>Frissítve:</strong> {{ formatDate(task.updated_at) }}
           </li>
           <li class="list-group-item">
-            <strong>Feladó:</strong> {{ task.assigner }}
+            <strong>Feladó:</strong> {{ task.assigner.name }}
           </li>
           <li class="list-group-item">
-            <strong>Kiadás dátuma:</strong> {{ task.state0date ? formatDate(task.state0date) : "Nincs" }}
+            <strong>Kiadás dátuma:</strong>
+            {{ task.state0date ? formatDate(task.state0date) : "Nincs" }}
           </li>
           <li class="list-group-item">
-            <strong>Megkezdés dátuma:</strong> {{ task.state1date ? formatDate(task.state1date) : "Nincs" }}
+            <strong>Megkezdés dátuma:</strong>
+            {{ task.state1date ? formatDate(task.state1date) : "Nincs" }}
           </li>
           <li class="list-group-item">
-            <strong>Befejezés dátuma:</strong> {{ task.state2date ? formatDate(task.state2date) : "Nincs" }}
+            <strong>Befejezés dátuma:</strong>
+            {{ task.state2date ? formatDate(task.state2date) : "Nincs" }}
           </li>
         </ul>
-        <div class="mt-3 text-center">
-          <button v-if="!actionLoading" class="btn btn-primary" @click="handleTaskAction">
+
+        <div class="text-center">
+          <!-- Kezdés / Folytatás gomb -->
+          <button
+            v-if="!actionLoading"
+            class="btn btn-outline-dark px-4"
+            @click="handleTaskAction"
+          >
             {{ task.state1date ? "Folytatás" : "Megkezdés" }}
           </button>
-          <div v-else class="progress mt-3">
-            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+          <!-- Fekete alertben lévő spinner -->
+          <div v-else class="alert alert-dark d-flex align-items-center justify-content-center">
+            <div class="spinner-border text-white me-3" role="status">
+              <span class="visually-hidden">Folyamat...</span>
+            </div>
+            <span class="text-white">Folyamat...</span>
           </div>
         </div>
       </div>
-      <!-- Ha nincs aktív task -->
-      <div v-else>
+
+      <!-- Nincs task -->
+      <div v-else class="text-center text-muted my-5">
         <p>Nincs aktív task.</p>
       </div>
     </div>
@@ -72,33 +92,29 @@ const actionLoading = ref(false);
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "";
-  const dateObj = new Date(dateStr);
-  return dateObj.toLocaleString();
+  return new Date(dateStr).toLocaleString();
 };
 
 const fetchTask = async () => {
   isLoading.value = true;
   errorMessage.value = "";
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/task", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${props.token}`
-      }
+    const res = await fetch("http://127.0.0.1:8000/api/task", {
+      headers: { Authorization: `Bearer ${props.token}` }
     });
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || "Hiba történt a task lekérésekor!");
+    const json = await res.json();
+    console.log('fetchTask response:', json);
+    if (!res.ok) {
+      throw new Error(json.error || "Hiba a task lekérésekor");
     }
-    const data = await response.json();
-    if (data.success) {
-      task.value = data.task;
+    if (json.success && json.task) {
+      task.value = json.task;
     } else {
-      throw new Error(data.error || "Nem sikerült lekérni az aktív taskot.");
+      task.value = null;
+      errorMessage.value = json.error || "Nincs aktív task.";
     }
-  } catch (error) {
-    errorMessage.value = error.message;
+  } catch (e) {
+    errorMessage.value = e.message;
   } finally {
     isLoading.value = false;
   }
@@ -107,42 +123,52 @@ const fetchTask = async () => {
 onMounted(() => {
   if (props.token) fetchTask();
 });
-watch(() => props.token, (newVal) => {
-  if (newVal) fetchTask();
+watch(() => props.token, (tok) => {
+  if (tok) fetchTask();
 });
 
 const handleTaskAction = async () => {
   if (!task.value) return;
-  if (!task.value.state1date) {
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/api/task/${task.value.id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${props.token}`
-        },
-        body: JSON.stringify({ action: "start" })
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Hiba történt a feladat indításakor!");
-      }
-      const result = await response.json();
-      if (result.task && result.task.state1date) {
-        task.value.state1date = result.task.state1date;
-      }
-    } catch (error) {
-      console.error("Error starting task:", error);
-      errorMessage.value = error.message;
-      return;
+  actionLoading.value = true;
+  try {
+    const res = await fetch(`http://127.0.0.1:8000/api/task/${task.value.id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${props.token}`
+      },
+      body: JSON.stringify({ action: task.value.state1date ? "continue" : "start" })
+    });
+    const json = await res.json();
+    console.log('handleTaskAction response:', json);
+    if (!res.ok) {
+      throw new Error(json.error || "Hiba a task indításakor");
     }
+    if (json.task?.state1date) {
+      task.value.state1date = json.task.state1date;
+    }
+    emit('navigate', task.value.id);
+  } catch (e) {
+    console.error(e);
+    errorMessage.value = e.message;
+  } finally {
+    actionLoading.value = false;
   }
-  emit('navigate', task.value.id);
 };
 </script>
 
 <style scoped>
 .card {
   margin-top: 20px;
+}
+/* A task leírását nagyobbra, kiemeltebbre vesszük */
+.task-description {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #343a40;
+}
+/* Fekete körvonalú gomb */
+.btn-outline-dark {
+  border-width: 2px;
 }
 </style>

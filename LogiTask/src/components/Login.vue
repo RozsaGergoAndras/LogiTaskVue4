@@ -1,54 +1,54 @@
 <script setup>
-import { ref, reactive, defineEmits, defineProps } from "vue";
+import { ref, reactive, watch, defineEmits, defineProps } from "vue";
 
 const props = defineProps({
-  logoutMessage: {
-    type: String,
-    default: ''
-  }
+  logoutMessage: { type: String, default: "" }
 });
-const emit = defineEmits(['login-success']);
+const emit = defineEmits(["login-success", "clear-logout-message"]);
 
 const email = ref("");
 const password = ref("");
+const logoutMessage = ref(props.logoutMessage);
+
 const state = reactive({
   errorMessage: "",
   isLoading: false,
-  redirecting: false, // Csak a bejelentkezéshez szükséges
+  redirecting: false,
 });
 
-// Bejelentkezési függvény
+// Ha a szülő küld logoutMessage-et, 5 másodperc múlva töröljük
+watch(() => props.logoutMessage, (val) => {
+  logoutMessage.value = val;
+  if (val) {
+    setTimeout(() => {
+      logoutMessage.value = "";
+      emit("clear-logout-message");
+    }, 5000);
+  }
+});
+
 const login = async () => {
   if (!email.value || !password.value) {
     state.errorMessage = "Az email és a jelszó megadása kötelező!";
+    setTimeout(() => state.errorMessage = "", 5000);
     return;
   }
   state.isLoading = true;
   state.errorMessage = "";
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/login", {
+    const res = await fetch("http://127.0.0.1:8000/api/login", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        email: email.value,
-        password: password.value
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.value, password: password.value })
     });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || "Hibás bejelentkezési adatok!");
-    }
-    const token = data.token;
-    localStorage.setItem("token", token);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Hibás bejelentkezési adatok!");
+    localStorage.setItem("token", data.token);
     state.redirecting = true;
-    // 3 másodperces várakozás után jelzést küldünk a szülő felé
-    setTimeout(() => {
-      emit('login-success', token);
-    }, 1000);
-  } catch (error) {
-    state.errorMessage = error.message;
+    setTimeout(() => emit("login-success", data.token), 1000);
+  } catch (e) {
+    state.errorMessage = e.message;
+    setTimeout(() => state.errorMessage = "", 5000);
   } finally {
     state.isLoading = false;
   }
@@ -58,15 +58,14 @@ const login = async () => {
 <template>
   <div class="row justify-content-center">
     <div class="col-md-6 col-lg-4">
-      <div class="card shadow">
-        <div class="card-header bg-primary text-white">
+      <div class="card shadow-sm mt-4">
+        <div class="card-header bg-dark text-white">
           <h4 class="mb-0">Bejelentkezés</h4>
         </div>
         <div class="card-body">
-          <!-- Ha nincs átirányítás folyamatban -->
           <div v-if="!state.redirecting">
             <div class="mb-3">
-              <label for="email" class="form-label">Email</label>
+              <label for="email" class="form-label text-dark">Email</label>
               <input
                 id="email"
                 type="text"
@@ -77,7 +76,7 @@ const login = async () => {
               />
             </div>
             <div class="mb-3">
-              <label for="password" class="form-label">Jelszó</label>
+              <label for="password" class="form-label text-dark">Jelszó</label>
               <input
                 id="password"
                 type="password"
@@ -88,27 +87,26 @@ const login = async () => {
               />
             </div>
             <button
-              type="button"
-              class="btn btn-primary w-100"
+              class="btn btn-outline-dark w-100"
               :disabled="state.isLoading"
               @click="login"
             >
               {{ state.isLoading ? "Bejelentkezés folyamatban..." : "Bejelentkezés" }}
             </button>
-            <!-- Logout üzenet megjelenítése a login gomb alatt -->
-            <div v-if="logoutMessage" class="alert alert-info mt-3" role="alert">
+            <div v-if="logoutMessage" class="alert alert-light text-dark mt-3" role="alert">
               {{ logoutMessage }}
             </div>
-            <!-- Hibák megjelenítése -->
             <div v-if="state.errorMessage" class="alert alert-danger mt-3" role="alert">
               {{ state.errorMessage }}
             </div>
           </div>
-          <!-- Átirányítás esetén megjelenő loading bar (csak a bejelentkezésnél) -->
           <div v-else class="text-center">
-            <p>Bejelentkezés sikeres, kérlek várj...</p>
+            <p class="text-dark">Bejelentkezés sikeres, kérlek várj...</p>
             <div class="progress mt-3">
-              <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+              <div
+                class="progress-bar bg-dark progress-bar-striped progress-bar-animated"
+                style="width: 100%"
+              ></div>
             </div>
           </div>
         </div>
@@ -120,5 +118,15 @@ const login = async () => {
 <style scoped>
 .card {
   margin-top: 20px;
+}
+/* Input fókusz: sötét szegély, nincs box-shadow */
+.form-control:focus {
+  border-color: #343a40 !important;
+  box-shadow: none !important;
+}
+/* Alert light háttér sötét szöveggel */
+.alert-light {
+  background-color: #f8f9fa;
+  color: #212529;
 }
 </style>

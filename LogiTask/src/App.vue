@@ -1,14 +1,12 @@
 <template>
   <div>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3 shadow">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-2 shadow">
       <div class="container">
-        <!-- Brand with logo -->
-        <a class="navbar-brand" href="#">
-          <img src="/logo.png" alt="LogiTask"style="height: 65px;" />
+        <!-- Logo, kattintásra TaskInfo -->
+        <a class="navbar-brand" href="#" @click.prevent="showTaskInfo">
+          <img src="/logo.png" alt="LogiTask" style="height: 60px;" />
         </a>
-
-        <!-- Mobile toggler -->
         <button
           class="navbar-toggler"
           type="button"
@@ -21,69 +19,51 @@
           <span class="navbar-toggler-icon"></span>
         </button>
 
-        <!-- Links -->
         <div class="collapse navbar-collapse" id="mainNavbar">
-          <!-- Centered buttons -->
           <ul class="navbar-nav mx-auto d-flex gap-4">
-            <!-- Manager -->
-            <li
-              class="nav-item"
-              v-if="isLoggedIn && (role === '2' || role === 2 || role === 'manager')"
-            >
+            <li class="nav-item" v-if="isLoggedIn && isManager">
               <button
-                class="btn btn-outline-light"
-                @click.prevent="currentView = 'adminPanel'"
-              >
-                Manager
-              </button>
+                class="btn"
+                :class="currentView==='adminPanel' ? 'btn-light text-dark' : 'btn-outline-light'"
+                @click.prevent="currentView='adminPanel'"
+              >Manager</button>
             </li>
-            <!-- Kiosztott feladatok -->
-            <li
-              class="nav-item"
-              v-if="isLoggedIn && (role === '2' || role === 2 || role === 'manager')"
-            >
+            <li class="nav-item" v-if="isLoggedIn">
               <button
-                class="btn btn-outline-light"
-                @click.prevent="currentView = 'assignedWorks'"
-              >
-                Kiosztott feladatok
-              </button>
+                class="btn"
+                :class="currentView==='taskInfo' ? 'btn-light text-dark' : 'btn-outline-light'"
+                @click.prevent="currentView='taskInfo'"
+              >Feladataim</button>
             </li>
-            <!-- Statisztika -->
-            <li
-              class="nav-item"
-              v-if="isLoggedIn && (role === '2' || role === 2 || role === 'manager')"
-            >
+            <li class="nav-item" v-if="isLoggedIn && isManager">
               <button
-                class="btn btn-outline-light"
-                @click.prevent="currentView = 'stats'"
-              >
-                Statisztika
-              </button>
+                class="btn"
+                :class="currentView==='assignedWorks' ? 'btn-light text-dark' : 'btn-outline-light'"
+                @click.prevent="currentView='assignedWorks'"
+              >Kiosztott feladatok</button>
             </li>
-            <!-- Előző munkák -->
-            <li
-              class="nav-item"
-              v-if="isLoggedIn && (role === '1' || role === 1)"
-            >
+            <li class="nav-item" v-if="isLoggedIn && isManager">
               <button
-                class="btn btn-outline-light"
-                @click.prevent="currentView = 'previousWorks'"
-              >
-                Előző munkák
-              </button>
+                class="btn"
+                :class="currentView==='stats' ? 'btn-light text-dark' : 'btn-outline-light'"
+                @click.prevent="currentView='stats'"
+              >Statisztika</button>
+            </li>
+            <li class="nav-item" v-if="isLoggedIn && isWorker">
+              <button
+                class="btn"
+                :class="currentView==='previousWorks' ? 'btn-light text-dark' : 'btn-outline-light'"
+                @click.prevent="currentView='previousWorks'"
+              >Előző munkák</button>
             </li>
           </ul>
-          <!-- Logout button aligned right -->
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
               <button
                 v-if="isLoggedIn"
                 class="btn btn-danger fw-bold"
                 @click="logout"
-              >
-                Kijelentkezés
-              </button>
+              >Kijelentkezés</button>
             </li>
           </ul>
         </div>
@@ -93,64 +73,57 @@
     <!-- Main content -->
     <div class="container my-5">
       <Login
-        v-if="currentView === 'login'"
+        v-if="currentView==='login'"
         :logoutMessage="logoutMessage"
         @login-success="handleLoginSuccess"
-        @clear-logout-message="clearLogoutMessage"
-      />
-
+        @clear-logout-message="logoutMessage=''"/>
       <TaskInfo
-        v-else-if="currentView === 'taskInfo'"
+        v-else-if="currentView==='taskInfo'"
         :token="token"
-        @navigate="handleNavigate"
-      />
-
+        @navigate="handleNavigate"/>
       <CurrentTask
-        v-else-if="currentView === 'currentTask'"
+        v-else-if="currentView==='currentTask'"
         :token="token"
         :taskId="currentTaskId"
-        @navigateToEndTask="handleNavigateToEndTask"
-      />
-
+        @navigateToEndTask="handleNavigateToEndTask"/>
       <EndTask
-        v-else-if="currentView === 'endTask'"
+        v-else-if="currentView==='endTask'"
         :timeTaken="timeTaken"
-        @backToTaskInfo="handleBackToTaskInfo"
-      />
-
+        @backToTaskInfo="handleBackToTaskInfo"/>
       <AdminPanel
-        v-else-if="currentView === 'adminPanel'"
+        v-else-if="currentView==='adminPanel'"
         :token="token"
-        @backToTaskInfo="handleBackToTaskInfo"
-      />
-
+        @backToTaskInfo="handleBackToTaskInfo"/>
       <ListAssignedWorks
-        v-else-if="currentView === 'assignedWorks'"
-        :token="token"
-      />
-
+        v-else-if="currentView==='assignedWorks'"
+        :token="token"/>
       <ListPreviousWorks
-        v-else-if="currentView === 'previousWorks'"
-        :token="token"
-      />
-
+        v-else-if="currentView==='previousWorks'"
+        :token="token"/>
       <Stats
-        v-else-if="currentView === 'stats'"
+        v-else-if="currentView==='stats'"
         :token="token"
-        @backToTaskInfo="handleBackToTaskInfo"
-      />
+        @backToTaskInfo="handleBackToTaskInfo"/>
+    </div>
 
-      <div v-if="loggingOut" class="text-center mt-4">
-        <p>{{ logoutMessage }}</p>
-        <div class="progress mt-2">
-          <div
-            class="progress-bar progress-bar-striped progress-bar-animated"
-            role="progressbar"
-            style="width: 100%;"
-          ></div>
+    <!-- Logout modal -->
+    <div v-if="loggingOut" class="modal fade show" style="display: block;" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white">
+          <div class="modal-body text-center">
+            <p>{{ logoutMessage }}</p>
+            <div class="progress mt-3">
+              <div
+                class="progress-bar progress-bar-striped progress-bar-animated bg-dark"
+                role="progressbar"
+                style="width: 100%;"
+              ></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+    <div v-if="loggingOut" class="modal-backdrop fade show"></div>
 
     <!-- Break modal -->
     <div
@@ -160,7 +133,7 @@
       tabindex="-1"
     >
       <div class="modal-dialog">
-        <div class="modal-content">
+        <div class="modal-content bg-dark text-white">
           <div class="modal-header">
             <h5 class="modal-title">Szünet szükséges</h5>
             <button type="button" class="btn-close" @click="closeBreakModal"></button>
@@ -169,13 +142,7 @@
             <p>A szünetidő lejárt. Kérjük, tarts egy rövid szünetet!</p>
           </div>
           <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-primary"
-              @click="closeBreakModal"
-            >
-              OK
-            </button>
+            <button class="btn btn-light" @click="closeBreakModal">OK</button>
           </div>
         </div>
       </div>
@@ -210,86 +177,62 @@ export default {
     return {
       token: "",
       role: "",
-      userName: "",
       logoutMessage: "",
       loggingOut: false,
       currentView: "login",
       currentTaskId: null,
       timeTaken: 0,
-      timeLeft: 60,
       timer: null,
-      showBreakModal: false
+      showBreakModal: false,
+      timeLeft: 60
     };
   },
   computed: {
-    isLoggedIn() {
-      return this.token !== "";
-    }
+    isLoggedIn() { return this.token !== ""; },
+    isManager() { return this.role === "2" || this.role === "manager"; },
+    isWorker()  { return this.role === "1"; }
   },
   methods: {
+    showTaskInfo() { this.currentView = "taskInfo"; },
     async handleLoginSuccess(token) {
       this.token = token;
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/user", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${this.token}`
-          }
+        const res = await fetch("http://127.0.0.1:8000/api/user", {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Hiba a felhasználó adatainak lekérésekor");
-        }
-        const data = await response.json();
+        const data = await res.json();
         this.role = data.role.toString();
-        this.userName = data.name;
-      } catch (error) {
-        console.error(error);
+      } catch {
         this.role = "";
       }
-      this.currentView =
-        (this.role === "2" || this.role === "manager")
-          ? "adminPanel"
-          : "taskInfo";
-      this.logoutMessage = "";
+      this.currentView = this.isManager ? "adminPanel" : "taskInfo";
       this.startTimer();
     },
-    clearLogoutMessage() {
-      this.logoutMessage = "";
-    },
     async logout() {
-      if (!this.token) return;
       this.loggingOut = true;
-      let message = "";
+      let msg;
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/logout", {
+        const res = await fetch("http://127.0.0.1:8000/api/logout", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${this.token}`
-          }
+          headers: { Authorization: `Bearer ${this.token}` }
         });
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Kijelentkezés sikertelen");
-        }
-        message = "Sikeres kijelentkezés!";
+        if (!res.ok) throw new Error("Kijelentkezés sikertelen");
+        msg = "Sikeres kijelentkezés!";
       } catch (e) {
-        message = "Kijelentkezés sikertelen: " + e.message;
+        msg = e.message;
       }
-      this.logoutMessage = message;
+      this.logoutMessage = msg;
+      setTimeout(() => this.logoutMessage = "", 5000);
       clearInterval(this.timer);
       setTimeout(() => {
         this.token = "";
         this.role = "";
-        this.userName = "";
         this.currentView = "login";
         this.loggingOut = false;
       }, 1000);
     },
-    handleNavigate(taskId) {
-      this.currentTaskId = taskId;
+    handleNavigate(id) {
+      this.currentTaskId = id;
       this.currentView = "currentTask";
     },
     handleNavigateToEndTask({ taskId, timeTaken }) {
@@ -303,11 +246,14 @@ export default {
     startTimer() {
       clearInterval(this.timer);
       this.timeLeft = 60;
+      console.log(`Hátralévő idő a szünetig: ${this.timeLeft} perc`);
       this.timer = setInterval(() => {
         if (this.timeLeft > 0) {
           this.timeLeft--;
+          console.log(`Hátralévő idő a szünetig: ${this.timeLeft} perc`);
         } else {
           clearInterval(this.timer);
+          console.log("Szünet ideje!");
           this.showBreakModal = true;
         }
       }, 60000);
@@ -324,22 +270,11 @@ export default {
 </script>
 
 <style scoped>
-/* Increase navbar height */
 .navbar {
-  min-height: 70px;
+  min-height: 60px;
 }
-/* Make buttons larger */
 .btn {
   font-size: 1.1rem;
-  padding: 0.5rem 1.5rem;
-}
-/* Outline-light buttons on dark background */
-.btn-outline-light {
-  border-width: 2px;
-}
-/* Dark navbar text color */
-.navbar-dark .navbar-brand img {
-  display: inline-block;
-  vertical-align: middle;
+  padding: 0.4rem 1.2rem;
 }
 </style>

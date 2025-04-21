@@ -1,6 +1,7 @@
 <template>
-  <div class="card shadow-sm">
-    <div class="card-header bg-primary text-white">
+  <div class="card shadow-sm mt-4" style="he">
+    <!-- Fejléc a navbar sötét színével -->
+    <div class="card-header bg-dark text-white">
       <h5 class="mb-0">Admin Panel</h5>
     </div>
     <div class="card-body">
@@ -24,7 +25,6 @@
         <div class="col-md-9 ps-4">
           <!-- Felhasználó hozzáadása -->
           <div v-if="selectedMenu === 'user'">
-            <h6>Felhasználó hozzáadása</h6>
             <form @submit.prevent="createUser">
               <div class="mb-3">
                 <label class="form-label">Név</label>
@@ -49,14 +49,14 @@
                   <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.role_name }}</option>
                 </select>
               </div>
-              <button class="btn btn-primary">Mentés</button>
+              <!-- Mentés gomb fekete kerettel -->
+              <button class="btn btn-outline-dark">Mentés</button>
             </form>
             <p class="mt-3 text-success" v-if="userResultMessage">{{ userResultMessage }}</p>
           </div>
 
           <!-- Feladat típus hozzáadása -->
           <div v-else-if="selectedMenu === 'taskType'">
-            <h6>Feladat típus hozzáadása</h6>
             <form @submit.prevent="createTaskType">
               <div class="mb-3">
                 <label class="form-label">Típus név</label>
@@ -69,23 +69,15 @@
                   <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.role_name }}</option>
                 </select>
               </div>
-              <button class="btn btn-primary">Mentés</button>
+              <!-- Mentés gomb fekete kerettel -->
+              <button class="btn btn-outline-dark">Mentés</button>
             </form>
             <p class="mt-3 text-success" v-if="taskTypeResultMessage">{{ taskTypeResultMessage }}</p>
           </div>
 
           <!-- Feladat létrehozása -->
           <div v-else>
-            <h6>Feladat létrehozása</h6>
             <form @submit.prevent="createTask">
-              <p><strong>Feladatszervező:</strong> {{ currentUserId }}</p>
-              <div class="mb-3">
-                <label class="form-label">Végrehajtó</label>
-                <select v-model="worker" class="form-select">
-                  <option disabled value="">Válassz végrehajtót</option>
-                  <option v-for="u in userList" :key="u.id" :value="u.id">{{ u.name }}</option>
-                </select>
-              </div>
               <div class="mb-3">
                 <label class="form-label">Feladattípus</label>
                 <select v-model="taskTypeId" class="form-select" required>
@@ -94,10 +86,18 @@
                 </select>
               </div>
               <div class="mb-3">
+                <label class="form-label">Végrehajtó</label>
+                <select v-model="worker" class="form-select">
+                  <option disabled value="">Válassz végrehajtót</option>
+                  <option v-for="u in userList" :key="u.id" :value="u.id">{{ u.name }}</option>
+                </select>
+              </div>
+              <div class="mb-3">
                 <label class="form-label">Leírás</label>
                 <input v-model="description" class="form-control" required />
               </div>
-              <button class="btn btn-primary">Mentés</button>
+              <!-- Mentés gomb fekete kerettel -->
+              <button class="btn btn-outline-dark">Mentés</button>
             </form>
             <p class="mt-3 text-success" v-if="taskResultMessage">{{ taskResultMessage }}</p>
           </div>
@@ -116,7 +116,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { defineProps, defineEmits } from 'vue';
 
-const props = defineProps({ token: { type: String, required: true } });
+const props = defineProps({ token: String });
 const emit = defineEmits(['backToTaskInfo']);
 
 const selectedMenu = ref('user');
@@ -260,14 +260,18 @@ function backToMain() {
 
 <style scoped>
 .card-header {
-  border-bottom: 2px solid #0d6efd;
+  background-color: #343a40; /* megegyezik a navbar bg-dark-szel */
+  color: #fff;
+  /* a kék alulvonal eltávolítva */
 }
 .list-group-item {
   cursor: pointer;
+  border: none;
 }
 .list-group-item.active {
-  background-color: #0d6efd;
-  color: #fff;
+  background-color: #f8f9fa;   /* világos, mint a btn-light */
+  color: #212529;               /* text-dark */
+  font-weight: bold;
 }
 .card-body {
   padding: 1.5rem;
