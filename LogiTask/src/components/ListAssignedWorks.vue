@@ -1,9 +1,9 @@
 <template>
-  <div class="card mt-4">
+  <div class="card mt-4" style=" height: 80vh;">
     <div class="card-header">
       Hozzárendelt feladatok listája
     </div>
-    <div class="card-body d-flex flex-column" style="height: 80vh;">
+    <div class="card-body d-flex flex-column" style="height: 75%;">
       <!-- Dátum szűrő -->
       <div class="row mb-3">
         <div class="col-md-5">
