@@ -1,146 +1,112 @@
 <template>
-  <div class="card">
-    <div class="card-header">
-      Task Admin Panel
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">Admin Panel</h5>
     </div>
     <div class="card-body">
       <div class="row">
-        <!-- Bal oldali menüsáv -->
-        <div class="col-md-3">
-          <div class="list-group">
-            <button
-              type="button"
+        <!-- Menü a kártyán belül, separatorral -->
+        <div class="col-md-3 border-end pe-3">
+          <ul class="list-group">
+            <li
+              v-for="(item, idx) in menuItems"
+              :key="item.key"
               class="list-group-item list-group-item-action"
-              :class="{ active: selectedMenu === 'user' }"
-              @click="selectedMenu = 'user'"
+              :class="{ active: selectedMenu === item.key }"
+              @click="selectedMenu = item.key"
             >
-              Felhasználó hozzáadása
-            </button>
-            <button
-              type="button"
-              class="list-group-item list-group-item-action"
-              :class="{ active: selectedMenu === 'taskType' }"
-              @click="selectedMenu = 'taskType'"
-            >
-              Feladat típus hozzáadása
-            </button>
-            <button
-              type="button"
-              class="list-group-item list-group-item-action"
-              :class="{ active: selectedMenu === 'task' }"
-              @click="selectedMenu = 'task'"
-            >
-              Feladat létrehozása
-            </button>
-          </div>
+              {{ item.label }}
+            </li>
+          </ul>
         </div>
-        <!-- Jobb oldali tartalom -->
-        <div class="col-md-9">
+
+        <!-- Tartalom -->
+        <div class="col-md-9 ps-4">
           <!-- Felhasználó hozzáadása -->
           <div v-if="selectedMenu === 'user'">
-            <h5>Felhasználó hozzáadása</h5>
+            <h6>Felhasználó hozzáadása</h6>
             <form @submit.prevent="createUser">
               <div class="mb-3">
-                <label for="user_name" class="form-label">Név</label>
-                <input v-model="userName" type="text" id="user_name" class="form-control" placeholder="Béla" required />
+                <label class="form-label">Név</label>
+                <input v-model="userName" class="form-control" required />
               </div>
               <div class="mb-3">
-                <label for="user_email" class="form-label">Email</label>
-                <input v-model="userEmail" type="email" id="user_email" class="form-control" placeholder="test2@example.com" required />
+                <label class="form-label">Email</label>
+                <input v-model="userEmail" type="email" class="form-control" required />
               </div>
               <div class="mb-3">
-                <label for="user_password" class="form-label">Jelszó</label>
-                <input v-model="userPassword" type="password" id="user_password" class="form-control" placeholder="password" required />
+                <label class="form-label">Jelszó</label>
+                <input v-model="userPassword" type="password" class="form-control" required />
               </div>
               <div class="mb-3">
-                <label for="user_password_confirmation" class="form-label">Jelszó megerősítése</label>
-                <input v-model="userPasswordConfirmation" type="password" id="user_password_confirmation" class="form-control" placeholder="password" required />
+                <label class="form-label">Jelszó megerősítése</label>
+                <input v-model="userPasswordConfirmation" type="password" class="form-control" required />
               </div>
               <div class="mb-3">
-                <label for="user_role" class="form-label">Szerep</label>
-                <select v-model="userRole" id="user_role" class="form-select" required>
+                <label class="form-label">Szerep</label>
+                <select v-model="userRole" class="form-select" required>
                   <option disabled value="">Válassz szerepet</option>
-                  <option v-for="roleItem in roles" :key="roleItem.id" :value="roleItem.id">
-                    {{ roleItem.role_name }}
-                  </option>
+                  <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.role_name }}</option>
                 </select>
               </div>
-              <button type="submit" class="btn btn-primary">Felhasználó hozzáadása</button>
+              <button class="btn btn-primary">Mentés</button>
             </form>
-            <div class="mt-3">
-              <p v-if="userResultMessage">{{ userResultMessage }}</p>
-            </div>
+            <p class="mt-3 text-success" v-if="userResultMessage">{{ userResultMessage }}</p>
           </div>
 
           <!-- Feladat típus hozzáadása -->
           <div v-else-if="selectedMenu === 'taskType'">
-            <h5>Feladat típus hozzáadása</h5>
+            <h6>Feladat típus hozzáadása</h6>
             <form @submit.prevent="createTaskType">
               <div class="mb-3">
-                <label for="type_name" class="form-label">Típus név</label>
-                <input v-model="typeName" type="text" id="type_name" class="form-control" placeholder="Pl. Javítás" required />
+                <label class="form-label">Típus név</label>
+                <input v-model="typeName" class="form-control" required />
               </div>
               <div class="mb-3">
-                <label for="assignable_role" class="form-label">Hozzárendelhető szerep</label>
-                <select v-model="assignableRole" id="assignable_role" class="form-select" required>
+                <label class="form-label">Hozzárendelhető szerep</label>
+                <select v-model="assignableRole" class="form-select" required>
                   <option disabled value="">Válassz szerepet</option>
-                  <option v-for="roleItem in roles" :key="roleItem.id" :value="roleItem.id">
-                    {{ roleItem.role_name }}
-                  </option>
+                  <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.role_name }}</option>
                 </select>
               </div>
-              <button type="submit" class="btn btn-primary">Feladat típus hozzáadása</button>
+              <button class="btn btn-primary">Mentés</button>
             </form>
-            <div class="mt-3">
-              <p v-if="taskTypeResultMessage">{{ taskTypeResultMessage }}</p>
-            </div>
+            <p class="mt-3 text-success" v-if="taskTypeResultMessage">{{ taskTypeResultMessage }}</p>
           </div>
 
           <!-- Feladat létrehozása -->
-          <div v-else-if="selectedMenu === 'task'">
-            <h5>Feladat létrehozása</h5>
+          <div v-else>
+            <h6>Feladat létrehozása</h6>
             <form @submit.prevent="createTask">
-              <!-- Feladatszervező: a bejelentkezett user ID-je -->
-              <p class="mb-3"><strong>Feladatszervező:</strong> {{ currentUserId }}</p>
-
-              <!-- Végrehajtó legördülő -->
+              <p><strong>Feladatszervező:</strong> {{ currentUserId }}</p>
               <div class="mb-3">
-                <label for="worker" class="form-label">Végrehajtó</label>
-                <select v-model="worker" id="worker" class="form-select">
+                <label class="form-label">Végrehajtó</label>
+                <select v-model="worker" class="form-select">
                   <option disabled value="">Válassz végrehajtót</option>
-                  <option v-for="user in userList" :key="user.id" :value="user.id">
-                    {{ user.name }}
-                  </option>
+                  <option v-for="u in userList" :key="u.id" :value="u.id">{{ u.name }}</option>
                 </select>
               </div>
-
-              <!-- Feladat típus legördülő -->
               <div class="mb-3">
-                <label for="task_type" class="form-label">Feladat típus</label>
-                <select v-model="taskTypeId" id="task_type" class="form-select" required>
-                  <option disabled value="">Válassz típus</option>
-                  <option v-for="type in taskTypes" :key="type.id" :value="type.id">
-                    {{ type.type_name }}
-                  </option>
+                <label class="form-label">Feladattípus</label>
+                <select v-model="taskTypeId" class="form-select" required>
+                  <option disabled value="">Válassz típust</option>
+                  <option v-for="t in taskTypes" :key="t.id" :value="t.id">{{ t.type_name }}</option>
                 </select>
               </div>
-
               <div class="mb-3">
-                <label for="description" class="form-label">Leírás (description)</label>
-                <input v-model="description" type="text" id="description" class="form-control" placeholder="Pl. Javítás szükséges" required />
+                <label class="form-label">Leírás</label>
+                <input v-model="description" class="form-control" required />
               </div>
-              <button type="submit" class="btn btn-primary">Feladat létrehozása</button>
+              <button class="btn btn-primary">Mentés</button>
             </form>
-            <div class="mt-3">
-              <p v-if="taskResultMessage">{{ taskResultMessage }}</p>
-            </div>
+            <p class="mt-3 text-success" v-if="taskResultMessage">{{ taskResultMessage }}</p>
+          </div>
+
+          <!-- Vissza gomb -->
+          <div class="mt-4 text-center">
+            <button class="btn btn-secondary" @click="backToMain">Vissza</button>
           </div>
         </div>
-      </div>
-
-      <!-- Vissza a főoldalra gomb -->
-      <div class="mt-3 text-center">
-        <button class="btn btn-secondary" @click="backToMain">Vissza a főoldalra</button>
       </div>
     </div>
   </div>
@@ -153,10 +119,18 @@ import { defineProps, defineEmits } from 'vue';
 const props = defineProps({ token: { type: String, required: true } });
 const emit = defineEmits(['backToTaskInfo']);
 
-// Állapotok
 const selectedMenu = ref('user');
+const menuItems = [
+  { key: 'user',     label: 'Felhasználó hozzáadása' },
+  { key: 'taskType', label: 'Feladat típus hozzáadása' },
+  { key: 'task',     label: 'Feladat létrehozása' }
+];
 
-// Felhasználó hozzáadása
+const roles = ref([]);
+const userList = ref([]);
+const taskTypes = ref([]);
+const currentUserId = ref('');
+
 const userName = ref('');
 const userEmail = ref('');
 const userPassword = ref('');
@@ -164,84 +138,138 @@ const userPasswordConfirmation = ref('');
 const userRole = ref('');
 const userResultMessage = ref('');
 
-// Feladat típus létrehozása
 const typeName = ref('');
 const assignableRole = ref('');
 const taskTypeResultMessage = ref('');
 
-// Feladat létrehozása
 const worker = ref('');
 const taskTypeId = ref('');
 const description = ref('');
 const taskResultMessage = ref('');
 
-// Lekért adatok
-const roles = ref([]);
-const userList = ref([]);
-const taskTypes = ref([]);
-const currentUserId = ref('');
-
-// Fetch függvények
 async function fetchRoles() {
-  const res = await fetch('http://127.0.0.1:8000/api/roles', { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${props.token}` } });
-  const data = await res.json(); roles.value = Array.isArray(data.roles) ? data.roles : data;
+  const res = await fetch('http://127.0.0.1:8000/api/roles', {
+    headers: { Authorization: `Bearer ${props.token}` }
+  });
+  const j = await res.json();
+  roles.value = j.roles || [];
 }
 async function fetchTaskTypes() {
-  const res = await fetch('http://127.0.0.1:8000/api/tasktype', { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${props.token}` } });
-  const d = await res.json(); taskTypes.value = d.data || [];
+  const res = await fetch('http://127.0.0.1:8000/api/tasktype', {
+    headers: { Authorization: `Bearer ${props.token}` }
+  });
+  const j = await res.json();
+  taskTypes.value = j.data || [];
 }
 async function fetchCurrentUser() {
-  const res = await fetch('http://127.0.0.1:8000/api/user', { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${props.token}` } });
-  const d = await res.json(); if (res.ok && d.id) currentUserId.value = d.id;
+  const res = await fetch('http://127.0.0.1:8000/api/user', {
+    headers: { Authorization: `Bearer ${props.token}` }
+  });
+  const j = await res.json();
+  if (res.ok) currentUserId.value = j.id;
 }
-async function fetchUsersByTaskType(val) {
-  console.log('fetchUsers POST body:', { task_type_id: val });
-  const res = await fetch('http://127.0.0.1:8000/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${props.token}` }, body: JSON.stringify({ task_type_id: val }) });
-  const d = await res.json(); console.log('fetchUsers response:', d); userList.value = Array.isArray(d) ? d : d.users || [];
+async function fetchUsersByTaskType(id) {
+  const res = await fetch('http://127.0.0.1:8000/api/users', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${props.token}`
+    },
+    body: JSON.stringify({ task_type_id: id })
+  });
+  const j = await res.json();
+  userList.value = Array.isArray(j) ? j : j.users || [];
 }
 
-// Watch
-watch(taskTypeId, newVal => { if (newVal) fetchUsersByTaskType(newVal); else userList.value = []; });
+watch(taskTypeId, val => {
+  if (val) fetchUsersByTaskType(val);
+  else userList.value = [];
+});
 
-// Init
-onMounted(() => { fetchRoles(); fetchTaskTypes(); fetchCurrentUser(); });
+onMounted(() => {
+  fetchRoles();
+  fetchTaskTypes();
+  fetchCurrentUser();
+});
 
-// Műveletek
 async function createUser() {
-  const body = { name: userName.value, email: userEmail.value, password: userPassword.value, password_confirmation: userPasswordConfirmation.value, role: userRole.value };
-  console.log('createUser body', body);
-  const res = await fetch('http://127.0.0.1:8000/api/user/create', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${props.token}` }, body: JSON.stringify(body) });
-  const d = await res.json(); console.log('createUser res', d);
-  if (!res.ok) { userResultMessage.value = 'Hiba: ' + (d.error || ''); return; }
-  userResultMessage.value = 'Felhasználó sikeresen hozzáadva!';
+  const res = await fetch('http://127.0.0.1:8000/api/user/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${props.token}`
+    },
+    body: JSON.stringify({
+      name: userName.value,
+      email: userEmail.value,
+      password: userPassword.value,
+      password_confirmation: userPasswordConfirmation.value,
+      role: userRole.value
+    })
+  });
+  const j = await res.json();
+  if (!res.ok) return userResultMessage.value = j.error || 'Hiba';
+  userResultMessage.value = 'Sikeres mentés';
   userName.value = userEmail.value = userPassword.value = userPasswordConfirmation.value = userRole.value = '';
 }
+
 async function createTaskType() {
-  const body = { type_name: typeName.value, assignable_role: assignableRole.value };
-  console.log('createTaskType body', body);
-  const res = await fetch('http://127.0.0.1:8000/api/tasktype/create/new', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${props.token}` }, body: JSON.stringify(body) });
-  const d = await res.json(); console.log('createTaskType res', d);
-  if (!res.ok) { taskTypeResultMessage.value = 'Hiba: ' + (d.error || ''); return; }
-  taskTypeResultMessage.value = 'Feladat típus sikeresen hozzáadva!';
+  const res = await fetch('http://127.0.0.1:8000/api/tasktype/create/new', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${props.token}`
+    },
+    body: JSON.stringify({
+      type_name: typeName.value,
+      assignable_role: assignableRole.value
+    })
+  });
+  const j = await res.json();
+  if (!res.ok) return taskTypeResultMessage.value = j.error || 'Hiba';
+  taskTypeResultMessage.value = 'Sikeres mentés';
   typeName.value = assignableRole.value = '';
   fetchTaskTypes();
 }
+
 async function createTask() {
-  const body = { assigner: currentUserId.value, worker: worker.value || null, task_type: taskTypeId.value, description: description.value };
-  console.log('createTask body', body);
-  const res = await fetch('http://127.0.0.1:8000/api/task/create/new', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${props.token}` }, body: JSON.stringify(body) });
-  const d = await res.json(); console.log('createTask res', d);
-  if (!res.ok) { taskResultMessage.value = 'Hiba: ' + (d.error || ''); return; }
-  taskResultMessage.value = 'Feladat sikeresen létrehozva!';
+  const res = await fetch('http://127.0.0.1:8000/api/task/create/new', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${props.token}`
+    },
+    body: JSON.stringify({
+      assigner: currentUserId.value,
+      worker: worker.value || null,
+      task_type: taskTypeId.value,
+      description: description.value
+    })
+  });
+  const j = await res.json();
+  if (!res.ok) return taskResultMessage.value = j.error || 'Hiba';
+  taskResultMessage.value = 'Sikeres mentés';
   worker.value = taskTypeId.value = description.value = '';
   userList.value = [];
 }
 
-function backToMain() { emit('backToTaskInfo'); }
+function backToMain() {
+  emit('backToTaskInfo');
+}
 </script>
 
 <style scoped>
-.card { margin-top: 20px; }
-.list-group-item { cursor: pointer; }
-.list-group-item.active { background-color: #0d6efd; border-color: #0d6efd; color: #fff; }
+.card-header {
+  border-bottom: 2px solid #0d6efd;
+}
+.list-group-item {
+  cursor: pointer;
+}
+.list-group-item.active {
+  background-color: #0d6efd;
+  color: #fff;
+}
+.card-body {
+  padding: 1.5rem;
+}
 </style>
