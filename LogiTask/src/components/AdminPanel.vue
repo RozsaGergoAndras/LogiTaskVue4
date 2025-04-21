@@ -28,19 +28,19 @@
             <form @submit.prevent="createUser">
               <div class="mb-3">
                 <label class="form-label">Név</label>
-                <input v-model="userName" class="form-control" required />
+                <input v-model="userName" class="form-control" required maxlength="255"/>
               </div>
               <div class="mb-3">
                 <label class="form-label">Email</label>
-                <input v-model="userEmail" type="email" class="form-control" required />
+                <input v-model="userEmail" type="email" class="form-control" required maxlength="255"/>
               </div>
               <div class="mb-3">
                 <label class="form-label">Jelszó</label>
-                <input v-model="userPassword" type="password" class="form-control" required />
+                <input v-model="userPassword" type="password" class="form-control" required maxlength="255"/>
               </div>
               <div class="mb-3">
                 <label class="form-label">Jelszó megerősítése</label>
-                <input v-model="userPasswordConfirmation" type="password" class="form-control" required />
+                <input v-model="userPasswordConfirmation" type="password" class="form-control" required maxlength="255"/>
               </div>
               <div class="mb-3">
                 <label class="form-label">Szerep</label>
@@ -50,7 +50,7 @@
                 </select>
               </div>
               <!-- Mentés gomb fekete kerettel -->
-              <button class="btn btn-outline-dark">Mentés</button>
+              <button class="btn btn-outline-dark">Hozzáadás</button>
             </form>
             <p class="mt-3 text-success" v-if="userResultMessage">{{ userResultMessage }}</p>
           </div>
@@ -60,7 +60,7 @@
             <form @submit.prevent="createTaskType">
               <div class="mb-3">
                 <label class="form-label">Típus név</label>
-                <input v-model="typeName" class="form-control" required />
+                <input v-model="typeName" class="form-control" required maxlength="255"/>
               </div>
               <div class="mb-3">
                 <label class="form-label">Hozzárendelhető szerep</label>
@@ -70,7 +70,7 @@
                 </select>
               </div>
               <!-- Mentés gomb fekete kerettel -->
-              <button class="btn btn-outline-dark">Mentés</button>
+              <button class="btn btn-outline-dark">Hozzáadás</button>
             </form>
             <p class="mt-3 text-success" v-if="taskTypeResultMessage">{{ taskTypeResultMessage }}</p>
           </div>
@@ -88,16 +88,16 @@
               <div class="mb-3">
                 <label class="form-label">Végrehajtó</label>
                 <select v-model="worker" class="form-select">
-                  <option disabled value="">Válassz végrehajtót</option>
+                  <option value="">Automatikus beosztás</option>
                   <option v-for="u in userList" :key="u.id" :value="u.id">{{ u.name }}</option>
                 </select>
               </div>
               <div class="mb-3">
                 <label class="form-label">Leírás</label>
-                <input v-model="description" class="form-control" required />
+                <textarea name="" id="" v-model="description" class="form-control" required maxlength="2000"></textarea>
               </div>
               <!-- Mentés gomb fekete kerettel -->
-              <button class="btn btn-outline-dark">Mentés</button>
+              <button class="btn btn-outline-dark">Hozzáadás</button>
             </form>
             <p class="mt-3 text-success" v-if="taskResultMessage">{{ taskResultMessage }}</p>
           </div>
@@ -209,7 +209,7 @@ async function createUser() {
   });
   const j = await res.json();
   if (!res.ok) return userResultMessage.value = j.error || 'Hiba';
-  userResultMessage.value = 'Sikeres mentés';
+  userResultMessage.value = 'Sikeres hozzáadás';
   userName.value = userEmail.value = userPassword.value = userPasswordConfirmation.value = userRole.value = '';
 }
 
@@ -227,7 +227,7 @@ async function createTaskType() {
   });
   const j = await res.json();
   if (!res.ok) return taskTypeResultMessage.value = j.error || 'Hiba';
-  taskTypeResultMessage.value = 'Sikeres mentés';
+  taskTypeResultMessage.value = 'Sikeres hozzáadás';
   typeName.value = assignableRole.value = '';
   fetchTaskTypes();
 }
@@ -248,7 +248,7 @@ async function createTask() {
   });
   const j = await res.json();
   if (!res.ok) return taskResultMessage.value = j.error || 'Hiba';
-  taskResultMessage.value = 'Sikeres mentés';
+  taskResultMessage.value = 'Sikeres hozzáadás';
   worker.value = taskTypeId.value = description.value = '';
   userList.value = [];
 }

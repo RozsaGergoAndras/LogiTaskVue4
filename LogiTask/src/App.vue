@@ -56,6 +56,12 @@
                 @click.prevent="currentView='previousWorks'"
               >Előző munkák</button>
             </li>
+            <li class="nav-item" v-if="isLoggedIn">
+              <button
+                class="btn btn-outline-light"
+                @click.prevent="openPasswordModal"
+              >Jelszó átállítása</button>
+            </li>
           </ul>
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
@@ -76,78 +82,109 @@
         v-if="currentView==='login'"
         :logoutMessage="logoutMessage"
         @login-success="handleLoginSuccess"
-        @clear-logout-message="logoutMessage=''"/>
+      />
       <TaskInfo
         v-else-if="currentView==='taskInfo'"
         :token="token"
-        @navigate="handleNavigate"/>
+        @navigate="handleNavigate"
+      />
       <CurrentTask
         v-else-if="currentView==='currentTask'"
         :token="token"
         :taskId="currentTaskId"
-        @navigateToEndTask="handleNavigateToEndTask"/>
+        @navigateToEndTask="handleNavigateToEndTask"
+      />
       <EndTask
         v-else-if="currentView==='endTask'"
         :timeTaken="timeTaken"
-        @backToTaskInfo="handleBackToTaskInfo"/>
+        @backToTaskInfo="handleBackToTaskInfo"
+      />
       <AdminPanel
         v-else-if="currentView==='adminPanel'"
         :token="token"
-        @backToTaskInfo="handleBackToTaskInfo"/>
+        @backToTaskInfo="handleBackToTaskInfo"
+      />
       <ListAssignedWorks
         v-else-if="currentView==='assignedWorks'"
-        :token="token"/>
+        :token="token"
+      />
       <ListPreviousWorks
         v-else-if="currentView==='previousWorks'"
-        :token="token"/>
+        :token="token"
+      />
       <Stats
         v-else-if="currentView==='stats'"
         :token="token"
-        @backToTaskInfo="handleBackToTaskInfo"/>
+        @backToTaskInfo="handleBackToTaskInfo"
+      />
     </div>
 
-    <!-- Logout modal -->
-    <div v-if="loggingOut" class="modal fade show" style="display: block;" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark text-white">
-          <div class="modal-body text-center">
-            <p>{{ logoutMessage }}</p>
-            <div class="progress mt-3">
-              <div
-                class="progress-bar progress-bar-striped progress-bar-animated bg-dark"
-                role="progressbar"
-                style="width: 100%;"
-              ></div>
+    <!-- Password Change Modal -->
+    <div v-if="showPasswordModal" class="modal fade show" style="display: block;" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-white">
+            <h5 class="modal-title">Jelszó megváltoztatása</h5>
+            <button class="btn-close btn-close-white" @click="closePasswordModal"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Input fields -->
+            <div v-if="!confirming && !passwordMessage">
+              <div class="mb-3">
+                <label class="form-label">Jelenlegi jelszó</label>
+                <input type="password" v-model="pw.current" class="form-control" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Új jelszó</label>
+                <input type="password" v-model="pw.new" class="form-control" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Új jelszó megerősítése</label>
+                <input type="password" v-model="pw.confirm" class="form-control" />
+              </div>
+              <div v-if="passwordError" class="alert alert-danger">{{ passwordError }}</div>
+            </div>
+            <!-- Confirmation -->
+            <div v-else-if="confirming && !passwordMessage">
+              <p>Biztosan meg szeretnéd változtatni a jelszavad?</p>
+            </div>
+            <!-- Result message -->
+            <div v-if="passwordMessage" class="alert" :class="passwordMessageType">
+              {{ passwordMessage }}
+            </div>
+          </div>
+          <div class="modal-footer">
+            <!-- Buttons -->
+            <button
+              v-if="!processing && !confirming && !passwordMessage"
+              class="btn btn-outline-dark"
+              @click="cancelPassword"
+            >Mégse</button>
+            <button
+              v-if="!processing && !confirming && !passwordMessage"
+              class="btn btn-dark"
+              @click="confirming = true"
+            >Megváltoztatás</button>
+            <button
+              v-if="!processing && confirming && !passwordMessage"
+              class="btn btn-outline-dark"
+              @click="confirming = false"
+            >Nem</button>
+            <button
+              v-if="!processing && confirming && !passwordMessage"
+              class="btn btn-dark"
+              @click="changePassword"
+            >Igen</button>
+            <!-- Processing spinner in dark alert -->
+            <div v-if="processing" class="alert alert-dark d-flex align-items-center">
+              <div class="spinner-border text-white me-2" role="status"></div>
+              <span class="text-white">Feldolgozás...</span>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div v-if="loggingOut" class="modal-backdrop fade show"></div>
-
-    <!-- Break modal -->
-    <div
-      v-if="showBreakModal"
-      class="modal fade show"
-      style="display: block;"
-      tabindex="-1"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content bg-dark text-white">
-          <div class="modal-header">
-            <h5 class="modal-title">Szünet szükséges</h5>
-            <button type="button" class="btn-close" @click="closeBreakModal"></button>
-          </div>
-          <div class="modal-body">
-            <p>A szünetidő lejárt. Kérjük, tarts egy rövid szünetet!</p>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-light" @click="closeBreakModal">OK</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div v-if="showBreakModal" class="modal-backdrop fade show"></div>
+    <div v-if="showPasswordModal" class="modal-backdrop fade show"></div>
   </div>
 </template>
 
@@ -184,16 +221,27 @@ export default {
       timeTaken: 0,
       timer: null,
       showBreakModal: false,
-      timeLeft: 60
+      timeLeft: 60,
+
+      // Password change modal state
+      showPasswordModal: false,
+      pw: { current: "", new: "", confirm: "" },
+      passwordError: "",
+      passwordMessage: "",
+      passwordMessageType: "alert-success",
+      confirming: false,
+      processing: false
     };
   },
   computed: {
     isLoggedIn() { return this.token !== ""; },
-    isManager() { return this.role === "2" || this.role === "manager"; },
-    isWorker()  { return this.role === "1"; }
+    isManager()  { return this.role === "2" || this.role === "manager"; },
+    isWorker()   { return this.role === "1"; }
   },
   methods: {
-    showTaskInfo() { this.currentView = "taskInfo"; },
+    showTaskInfo() {
+      this.currentView = "taskInfo";
+    },
     async handleLoginSuccess(token) {
       this.token = token;
       try {
@@ -210,18 +258,15 @@ export default {
     },
     async logout() {
       this.loggingOut = true;
-      let msg;
       try {
         const res = await fetch("http://127.0.0.1:8000/api/logout", {
           method: "POST",
           headers: { Authorization: `Bearer ${this.token}` }
         });
-        if (!res.ok) throw new Error("Kijelentkezés sikertelen");
-        msg = "Sikeres kijelentkezés!";
+        this.logoutMessage = res.ok ? "Sikeres kijelentkezés!" : "Kijelentkezés sikertelen";
       } catch (e) {
-        msg = e.message;
+        this.logoutMessage = e.message;
       }
-      this.logoutMessage = msg;
       setTimeout(() => this.logoutMessage = "", 5000);
       clearInterval(this.timer);
       setTimeout(() => {
@@ -261,6 +306,65 @@ export default {
     closeBreakModal() {
       this.showBreakModal = false;
       this.startTimer();
+    },
+
+    // Password modal methods
+    openPasswordModal() {
+      this.showPasswordModal = true;
+      this.pw = { current: "", new: "", confirm: "" };
+      this.passwordError = "";
+      this.passwordMessage = "";
+      this.confirming = false;
+    },
+    closePasswordModal() {
+      this.showPasswordModal = false;
+    },
+    cancelPassword() {
+      this.confirming = false;
+      this.passwordError = "";
+    },
+    async changePassword() {
+      if (!this.pw.current || !this.pw.new) {
+        this.passwordError = "Mindkét mező kitöltése kötelező!";
+        return;
+      }
+      if (this.pw.new !== this.pw.confirm) {
+        this.passwordError = "Az új jelszavak nem egyeznek!";
+        return;
+      }
+      this.passwordError = "";
+      this.processing = true;
+      console.log("Password change payload:", {
+        current_password: this.pw.current,
+        password: this.pw.new,
+        password_confirmation: this.pw.new
+      });
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/user/password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${this.token}`
+          },
+          body: JSON.stringify({
+            current_password: this.pw.current,
+            password: this.pw.new,
+            password_confirmation: this.pw.new
+          })
+        });
+        const json = await res.json();
+        console.log("Password change response:", json);
+        if (!res.ok) throw new Error(json.error || "Hiba történt!");
+        this.passwordMessage = "A jelszó sikeresen megváltozott.";
+        this.passwordMessageType = "alert-success";
+        this.confirming = false;
+        setTimeout(this.closePasswordModal, 3000);
+      } catch (e) {
+        this.passwordMessage = e.message;
+        this.passwordMessageType = "alert-danger";
+      } finally {
+        this.processing = false;
+      }
     }
   },
   beforeUnmount() {
@@ -270,11 +374,10 @@ export default {
 </script>
 
 <style scoped>
-.navbar {
-  min-height: 60px;
-}
-.btn {
-  font-size: 1.1rem;
-  padding: 0.4rem 1.2rem;
-}
+.navbar { min-height: 60px; }
+.btn { font-size: 1.1rem; padding: 0.4rem 1.2rem; }
+.form-control:focus { border-color: #343a40 !important; box-shadow: none !important; }
+.alert-dark { background-color: #343a40; color: #fff; border: none; }
+.btn-outline-dark { border-width: 2px; }
+.mb-3 label { font-weight: 600; }
 </style>
