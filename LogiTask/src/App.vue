@@ -5,7 +5,7 @@
       <div class="container">
         <!-- Logo, kattintásra TaskInfo -->
         <a class="navbar-brand" href="#" @click.prevent="showTaskInfo">
-          <img src="/logo.png" alt="LogiTask" style="height: 60px;" />
+          <img src="/logo.png" alt="LogiTask" style="max-height: 60px;" />
         </a>
         <button
           class="navbar-toggler"
@@ -63,11 +63,11 @@
               >Jelszó átállítása</button>
             </li>
           </ul>
-          <ul class="navbar-nav ms-auto">
+          <ul class="nav">
             <li class="nav-item">
               <button
                 v-if="isLoggedIn"
-                class="btn btn-danger fw-bold"
+                class="btn btn-danger fw-bold btn-logout"
                 @click="logout"
               >Kijelentkezés</button>
             </li>
@@ -380,4 +380,19 @@ export default {
 .alert-dark { background-color: #343a40; color: #fff; border: none; }
 .btn-outline-dark { border-width: 2px; }
 .mb-3 label { font-weight: 600; }
+
+@media (max-width: 1399px) {
+  /* 1300px alatt legyen bal padding */
+  .btn-logout {
+    margin-left: 1rem;
+  }
+}
+
+@media (max-width: 991px) {
+  /* 900px alatt már csak felső padding, a bal paddingot visszaállítjuk */
+  .btn-logout {
+    margin-left: 0 !important;
+    margin-top: 1.4rem !important;
+  }
+}
 </style>
