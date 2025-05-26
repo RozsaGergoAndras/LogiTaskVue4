@@ -322,6 +322,7 @@ export default {
     cancelPassword() {
       this.confirming = false;
       this.passwordError = "";
+      this.closePasswordModal();
     },
     async changePassword() {
       if (!this.pw.current || !this.pw.new) {
